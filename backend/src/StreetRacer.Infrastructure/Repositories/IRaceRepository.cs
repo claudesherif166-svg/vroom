@@ -29,4 +29,5 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetByEmailAsync(string email);
     Task<User?> GetByUsernameAsync(string username);
     Task<User?> GetByKeycloakSubjectAsync(string subject);
+    Task<PagedResult<User>> SearchByUsernameAsync(string query, Cursor cursor);
 }

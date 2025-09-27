@@ -1,14 +1,7 @@
-import Link from 'next/link'
-import { Suspense } from 'react'
-import HomePage from '@/components/HomePage'
+'use client'
 
-export default function Page() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <HomePage />
-    </Suspense>
-  )
-}
+import Link from 'next/link'
+import { useAuth } from '@/hooks/useAuth'
 import { MapPin, Zap, Users, Trophy } from 'lucide-react'
 
 export default function HomePage() {
@@ -27,8 +20,11 @@ export default function HomePage() {
           <Link href="/races" className="text-white hover:text-race-primary transition-colors">
             Races
           </Link>
-          <Link href="/leaderboard" className="text-white hover:text-race-primary transition-colors">
-            Leaderboard
+          <Link href="/events" className="text-white hover:text-race-primary transition-colors">
+            Events
+          </Link>
+          <Link href="/vehicles" className="text-white hover:text-race-primary transition-colors">
+            Vehicles
           </Link>
           {isAuthenticated && (
             <Link href="/profile" className="text-white hover:text-race-primary transition-colors">
@@ -176,7 +172,7 @@ export default function HomePage() {
                 <li><Link href="/feed" className="hover:text-race-primary transition-colors">Social Feed</Link></li>
                 <li><Link href="/chat" className="hover:text-race-primary transition-colors">Chat</Link></li>
                 <li><Link href="/stories" className="hover:text-race-primary transition-colors">Stories</Link></li>
-                <li><Link href="/garage" className="hover:text-race-primary transition-colors">Garage</Link></li>
+                <li><Link href="/vehicles" className="hover:text-race-primary transition-colors">Garage</Link></li>
               </ul>
             </div>
             

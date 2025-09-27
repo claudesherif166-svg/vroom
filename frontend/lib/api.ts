@@ -9,6 +9,11 @@ import {
   PagedResult,
   CreatePostDto,
   UpdateUserDto
+  EventDto,
+  CreateEventDto,
+  VehicleDto,
+  CreateVehicleDto,
+  UpdateVehicleDto
 } from '@/types'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
@@ -186,6 +191,68 @@ class ApiClient {
 
   async getRaceResults(raceId: string): Promise<RaceLiveStatusDto> {
     return this.request<RaceLiveStatusDto>(`/api/v1/races/${raceId}/results`)
+  }
+
+  // Vehicle endpoints
+  async getVehicles(ownerId?: string, cursor?: string): Promise<PagedResult<VehicleDto>> {
+    const params = new URLSearchParams()
+    if (ownerId) params.append('ownerId', ownerId)
+    if (cursor) params.append('cursor', cursor)
+    
+    return this.request<PagedResult<VehicleDto>>(`/api/v1/vehicles?${params}`)
+  }
+
+  async createVehicle(data: CreateVehicleDto): Promise<VehicleDto> {
+    return this.request<VehicleDto>('/api/v1/vehicles', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getVehicle(id: string): Promise<VehicleDto> {
+    return this.request<VehicleDto>(`/api/v1/vehicles/${id}`)
+  }
+
+  async updateVehicle(id: string, data: UpdateVehicleDto): Promise<VehicleDto> {
+    return this.request<VehicleDto>(`/api/v1/vehicles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteVehicle(id: string): Promise<void> {
+    return this.request<void>(`/api/v1/vehicles/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Event endpoints
+  async getEvents(cursor?: string): Promise<PagedResult<EventDto>> {
+    const params = new URLSearchParams()
+    if (cursor) params.append('cursor', cursor)
+    
+    return this.request<PagedResult<EventDto>>(`/api/v1/events?${params}`)
+  }
+
+  async createEvent(data: CreateEventDto): Promise<EventDto> {
+    return this.request<EventDto>('/api/v1/events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getEvent(id: string): Promise<EventDto> {
+    return this.request<EventDto>(`/api/v1/events/${id}`)
+  }
+
+  // Search endpoints
+  async search(type: string, query: string, cursor?: string): Promise<PagedResult<any>> {
+    const params = new URLSearchParams()
+    params.append('type', type)
+    params.append('q', query)
+    if (cursor) params.append('cursor', cursor)
+    
+    return this.request<PagedResult<any>>(`/api/v1/search?${params}`)
   }
 
   // Health check

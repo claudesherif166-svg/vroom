@@ -134,3 +134,53 @@ export interface UpdateUserDto {
   bio?: string
   isPrivate: boolean
 }
+
+// Event Types
+export interface EventDto {
+  id: string
+  hostId: string
+  hostUsername: string
+  title: string
+  description?: string
+  locationLatitude?: number
+  locationLongitude?: number
+  startAt?: string
+  endAt?: string
+  visibility: string
+  joinPolicy: string
+  createdAt: string
+  contributors: EventContributorDto[]
+}
+
+export interface EventContributorDto {
+  id: string
+  userId: string
+  username: string
+  profilePictureUrl?: string
+  role: string
+  grantedBy: string
+  createdAt: string
+}
+
+export interface CreateEventDto {
+  title: string
+  description?: string
+  locationLatitude?: number
+  locationLongitude?: number
+  startAt?: string
+  endAt?: string
+  visibility?: string
+  joinPolicy?: string
+}
+
+export interface CreatePostDto {
+  text?: string
+  visibility?: string
+  media: CreatePostMediaDto[]
+}
+
+export interface CreatePostMediaDto {
+  mediaUrl: string
+  mediaType: string
+  orderIndex: number
+}

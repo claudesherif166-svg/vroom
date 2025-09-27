@@ -103,10 +103,18 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IRaceService, RaceService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IPostService, PostService>();
+builder.Services.AddScoped<IFeedService, FeedService>();
 
 // Repositories
 builder.Services.AddScoped<IRaceRepository, EfRaceRepository>();
 builder.Services.AddScoped<IUserRepository, EfUserRepository>();
+builder.Services.AddScoped<IVehicleRepository, EfVehicleRepository>();
+builder.Services.AddScoped<IEventRepository, EfEventRepository>();
+builder.Services.AddScoped<IPostRepository, EfPostRepository>();
 
 // Background Services
 builder.Services.AddHostedService<RankingWorker>();

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using StreetRacer.Domain.Common;
 using StreetRacer.Domain.Entities;
+using System.Linq.Expressions;
 
 namespace StreetRacer.Infrastructure.Data;
 
