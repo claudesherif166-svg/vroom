@@ -47,7 +47,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(5),
-            NameClaimType = ClaimTypes.NameIdentifier
+            NameClaimType = "sub",
+            RoleClaimType = "realm_access.roles"
         };
 
         // Configure SignalR authentication
@@ -62,6 +63,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 {
                     context.Token = accessToken;
                 }
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                // Map Keycloak sub to NameIdentifier for consistency
+                var identity = context.Principal?.Identity as ClaimsIdentity;
+                var sub = identity?.FindFirst("sub")?.Value;
+                
+                if (!string.IsNullOrEmpty(sub))
+                {
+                    identity?.AddClaim(new Claim(ClaimTypes.NameIdentifier, sub));
+                }
+                
                 return Task.CompletedTask;
             }
         };
@@ -87,6 +101,8 @@ builder.Services.AddCors(options =>
 
 // Application Services
 builder.Services.AddScoped<IRaceService, RaceService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Repositories
 builder.Services.AddScoped<IRaceRepository, EfRaceRepository>();

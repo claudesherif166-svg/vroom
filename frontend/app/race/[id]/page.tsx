@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
+import { apiClient } from '@/lib/api'
 import { ArrowLeft, Users, Clock, MapPin, Flag } from 'lucide-react'
 import Link from 'next/link'
 import MapView from '@/components/MapView'
@@ -12,81 +14,113 @@ import { RaceDto } from '@/types'
 export default function RacePage() {
   const params = useParams()
   const raceId = params.id as string
+  const { isAuthenticated, getAccessToken } = useAuth()
   const [race, setRace] = useState<RaceDto | null>(null)
   const [loading, setLoading] = useState(true)
-
-  // Mock access token function - replace with actual auth
-  const getAccessToken = () => null // TODO: Implement Keycloak auth
+  const [error, setError] = useState<string | null>(null)
 
   const { status, sendLocation, connectionState } = useRaceRealtime(raceId, getAccessToken)
 
   useEffect(() => {
-    // Mock race data - replace with actual API call
-    const mockRace: RaceDto = {
-      id: raceId,
-      hostId: '123e4567-e89b-12d3-a456-426614174000',
-      name: 'Downtown Speed Challenge',
-      startLatitude: 40.7128,
-      startLongitude: -74.0060,
-      endLatitude: 40.7589,
-      endLongitude: -73.9851,
-      status: 'in_progress',
-      scheduledAt: new Date().toISOString(),
-      startedAt: new Date(Date.now() - 300000).toISOString(), // Started 5 minutes ago
-      finishedAt: null,
-      createdAt: new Date().toISOString(),
-      racers: [
-        {
-          id: '123e4567-e89b-12d3-a456-426614174001',
-          userId: '123e4567-e89b-12d3-a456-426614174001',
-          username: 'SpeedDemon',
-          profilePictureUrl: null,
-          startOrder: 1,
-          vehicleId: '123e4567-e89b-12d3-a456-426614174010',
-          status: 'racing',
-          joinedAt: new Date(Date.now() - 600000).toISOString(),
-          finishTime: null,
-          finalRank: null
-        },
-        {
-          id: '123e4567-e89b-12d3-a456-426614174002',
-          userId: '123e4567-e89b-12d3-a456-426614174002',
-          username: 'RoadRunner',
-          profilePictureUrl: null,
-          startOrder: 2,
-          vehicleId: '123e4567-e89b-12d3-a456-426614174011',
-          status: 'racing',
-          joinedAt: new Date(Date.now() - 600000).toISOString(),
-          finishTime: null,
-          finalRank: null
-        }
-      ]
+    const loadRace = async () => {
+      if (!isAuthenticated) return
+      
+      try {
+        setError(null)
+        const raceData = await apiClient.getRace(raceId)
+        setRace(raceData)
+      } catch (error) {
+        console.error('Failed to load race:', error)
+        setError(error instanceof Error ? error.message : 'Failed to load race')
+      } finally {
+        setLoading(false)
+      }
     }
 
-    setRace(mockRace)
-    setLoading(false)
-  }, [raceId])
+    loadRace()
+  }, [raceId, isAuthenticated])
 
-  // Mock GPS tracking
+  // GPS tracking
   useEffect(() => {
-    if (race?.status === 'in_progress') {
-      const interval = setInterval(() => {
-        // Simulate GPS location updates
-        const mockLocation = {
-          latitude: 40.7128 + (Math.random() - 0.5) * 0.01,
-          longitude: -74.0060 + (Math.random() - 0.5) * 0.01,
-          speed: Math.random() * 60 + 20, // 20-80 km/h
-          heading: Math.random() * 360,
-          recordedAt: new Date().toISOString()
-        }
+    if (race?.status === 'in_progress' && isAuthenticated) {
+      let watchId: number
+      
+      if (navigator.geolocation) {
+        watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const location = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              speed: position.coords.speed || undefined,
+              heading: position.coords.heading || undefined,
+              recordedAt: new Date().toISOString()
+            }
+            
+            sendLocation(location)
+          },
+          (error) => {
+            console.error('Geolocation error:', error)
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 1000
+          }
+        )
+      } else {
+        // Fallback: simulate GPS for development
+        const interval = setInterval(() => {
+          const mockLocation = {
+            latitude: race.startLatitude + (Math.random() - 0.5) * 0.01,
+            longitude: race.startLongitude + (Math.random() - 0.5) * 0.01,
+            speed: Math.random() * 60 + 20,
+            heading: Math.random() * 360,
+            recordedAt: new Date().toISOString()
+          }
+          
+          sendLocation(mockLocation)
+        }, 2000)
         
-        sendLocation(mockLocation)
-      }, 2000) // Send location every 2 seconds
-
-      return () => clearInterval(interval)
+        return () => clearInterval(interval)
+      }
+      
+      return () => {
+        if (watchId) {
+          navigator.geolocation.clearWatch(watchId)
+        }
+      }
     }
-  }, [race?.status, sendLocation])
+  }, [race?.status, isAuthenticated, sendLocation, race?.startLatitude, race?.startLongitude])
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-race-dark flex items-center justify-center">
+        <div className="racing-card p-8 text-center">
+          <Flag className="w-16 h-16 text-race-warning mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p className="text-gray-400 mb-6">Please sign in to view this race.</p>
+          <Link href="/auth/login" className="racing-button">
+            Sign In
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-race-dark flex items-center justify-center">
+        <div className="racing-card p-8 text-center">
+          <Flag className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Error Loading Race</h1>
+          <p className="text-gray-400 mb-6">{error}</p>
+          <Link href="/races" className="racing-button">
+            Browse Races
+          </Link>
+        </div>
+      </div>
+    )
+  }
   if (loading) {
     return (
       <div className="min-h-screen bg-race-dark flex items-center justify-center">

@@ -1,7 +1,10 @@
 import Link from 'next/link'
+import { useAuth } from '@/hooks/useAuth'
 import { MapPin, Zap, Users, Trophy } from 'lucide-react'
 
 export default function HomePage() {
+  const { isAuthenticated, user, login } = useAuth()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-race-dark via-race-gray to-race-dark">
       {/* Navigation */}
@@ -18,18 +21,37 @@ export default function HomePage() {
           <Link href="/leaderboard" className="text-white hover:text-race-primary transition-colors">
             Leaderboard
           </Link>
-          <Link href="/profile" className="text-white hover:text-race-primary transition-colors">
-            Profile
-          </Link>
+          {isAuthenticated && (
+            <Link href="/profile" className="text-white hover:text-race-primary transition-colors">
+              Profile
+            </Link>
+          )}
         </div>
         
         <div className="flex items-center space-x-4">
-          <Link href="/auth/login" className="text-white hover:text-race-primary transition-colors">
-            Login
-          </Link>
-          <Link href="/auth/register" className="racing-button">
-            Get Started
-          </Link>
+          {isAuthenticated ? (
+            <div className="flex items-center space-x-4">
+              <span className="text-race-primary">Welcome, {user?.username}</span>
+              <Link href="/feed" className="racing-button">
+                Dashboard
+              </Link>
+            </div>
+          ) : (
+            <>
+              <button 
+                onClick={login}
+                className="text-white hover:text-race-primary transition-colors"
+              >
+                Login
+              </button>
+              <button 
+                onClick={login}
+                className="racing-button"
+              >
+                Get Started
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -46,9 +68,15 @@ export default function HomePage() {
             compete for rankings, and become the ultimate street racer.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/races/new" className="racing-button text-lg px-8 py-4">
-              Start Racing Now
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/races/new" className="racing-button text-lg px-8 py-4">
+                Start Racing Now
+              </Link>
+            ) : (
+              <button onClick={login} className="racing-button text-lg px-8 py-4">
+                Start Racing Now
+              </button>
+            )}
             <Link href="/map" className="racing-button bg-transparent border-2 border-race-primary text-race-primary hover:bg-race-primary hover:text-race-dark text-lg px-8 py-4">
               Explore Map
             </Link>

@@ -6,7 +6,7 @@ import { LocationDto, RaceLiveStatusDto } from '@/types'
 
 export function useRaceRealtime(
   raceId: string,
-  getAccessToken: () => string | null
+  getAccessToken: () => Promise<string | null>
 ) {
   const [status, setStatus] = useState<RaceLiveStatusDto | null>(null)
   const [connectionState, setConnectionState] = useState<'Disconnected' | 'Connecting' | 'Connected'>('Disconnected')
@@ -48,12 +48,9 @@ export function useRaceRealtime(
   }, [raceId])
 
   useEffect(() => {
-    // For now, we'll use a mock token since Keycloak isn't set up yet
-    const mockAccessToken = () => 'mock-jwt-token'
-
     const connection = new HubConnectionBuilder()
       .withUrl(`${process.env.NEXT_PUBLIC_API_URL}/hubs/race`, {
-        accessTokenFactory: mockAccessToken // Use mock token for development
+        accessTokenFactory: getAccessToken
       })
       .configureLogging(LogLevel.Information)
       .withAutomaticReconnect([0, 2000, 10000, 30000])
@@ -116,76 +113,6 @@ export function useRaceRealtime(
       } catch (error) {
         console.error('Error starting SignalR connection:', error)
         setConnectionState('Disconnected')
-        
-        // In development, simulate connection and data
-        setTimeout(() => {
-          setConnectionState('Connected')
-          // Mock live race data for development
-          setStatus({
-            raceId,
-            status: 'in_progress',
-            lastUpdated: new Date().toISOString(),
-            racers: [
-              {
-                userId: '123e4567-e89b-12d3-a456-426614174001',
-                username: 'SpeedDemon',
-                profilePictureUrl: null,
-                rank: 1,
-                lastLocation: {
-                  latitude: 40.7128 + Math.random() * 0.01,
-                  longitude: -74.0060 + Math.random() * 0.01,
-                  speed: 45 + Math.random() * 20,
-                  heading: Math.random() * 360,
-                  recordedAt: new Date().toISOString()
-                },
-                distanceAlongRoute: 1200 + Math.random() * 500,
-                finished: false,
-                finishTime: undefined
-              },
-              {
-                userId: '123e4567-e89b-12d3-a456-426614174002',
-                username: 'RoadRunner',
-                profilePictureUrl: null,
-                rank: 2,
-                lastLocation: {
-                  latitude: 40.7100 + Math.random() * 0.01,
-                  longitude: -74.0080 + Math.random() * 0.01,
-                  speed: 40 + Math.random() * 15,
-                  heading: Math.random() * 360,
-                  recordedAt: new Date().toISOString()
-                },
-                distanceAlongRoute: 1000 + Math.random() * 400,
-                finished: false,
-                finishTime: undefined
-              }
-            ]
-          })
-
-          // Update mock data every few seconds
-          const interval = setInterval(() => {
-            setStatus(prev => {
-              if (!prev) return null
-              return {
-                ...prev,
-                lastUpdated: new Date().toISOString(),
-                racers: prev.racers.map(racer => ({
-                  ...racer,
-                  lastLocation: racer.lastLocation ? {
-                    ...racer.lastLocation,
-                    latitude: racer.lastLocation.latitude + (Math.random() - 0.5) * 0.001,
-                    longitude: racer.lastLocation.longitude + (Math.random() - 0.5) * 0.001,
-                    speed: Math.max(0, racer.lastLocation.speed! + (Math.random() - 0.5) * 10),
-                    heading: (racer.lastLocation.heading! + (Math.random() - 0.5) * 30) % 360,
-                    recordedAt: new Date().toISOString()
-                  } : null,
-                  distanceAlongRoute: (racer.distanceAlongRoute || 0) + Math.random() * 50
-                }))
-              }
-            })
-          }, 3000)
-
-          return () => clearInterval(interval)
-        }, 1000)
       }
     }
 
